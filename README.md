@@ -5,7 +5,7 @@
 [![GoDoc](https://godoc.org/github.com/happenslol/semanticid?status.svg)](https://godoc.org/github.com/happenslol/semanticid)
 [![Go Report Card](https://goreportcard.com/badge/github.com/happenslol/semanticid)](https://goreportcard.com/report/github.com/happenslol/semanticid)
 
-SemanticIDs are a extended version of UUIDs, providing extra utility especially in the context of microservice infrastructures.
+SemanticIDs are an extended version of UUIDs, providing extra utility especially in the context of microservice infrastructures.
 
 SemanticIDs consist of 3 parts:
 
@@ -58,6 +58,8 @@ Examples for good SemanticIDs:
 
 ```
 accountservice:users:7da57b46-f4f4-4824-a8e8-0c05ff88d9a5
+
 github:repos:87961165-15f0-4fb8-8d8b-d9ce59034565
+
 blog:posts:59731722-54ea-4447-8e99-f4689c0c060a
 ```
