@@ -3,9 +3,9 @@ package semanticid
 import (
 	"errors"
 	"fmt"
-	"testing"
-	"strings"
 	. "gopkg.in/check.v1"
+	"strings"
+	"testing"
 )
 
 type testSuite struct{}
@@ -76,12 +76,12 @@ func (s *testSuite) TestSeparator(c *C) {
 
 	_, err = NewWithNamespace("test.test")
 	c.Assert(err, Not(IsNil))
-	c.Assert(err.(SemanticIDError).errCode, Equals, errPartContainsSeparator)
+	c.Assert(err.(semanticIDError).errCode, Equals, errPartContainsSeparator)
 	c.Assert(strings.Contains(err.Error(), "namespace"), Equals, true)
 
 	_, err = NewWithCollection("test.test")
 	c.Assert(err, Not(IsNil))
-	c.Assert(err.(SemanticIDError).errCode, Equals, errPartContainsSeparator)
+	c.Assert(err.(semanticIDError).errCode, Equals, errPartContainsSeparator)
 	c.Assert(strings.Contains(err.Error(), "collection"), Equals, true)
 }
 
@@ -97,11 +97,11 @@ func (s *testSuite) TestFromString(c *C) {
 
 	sid, err = FromString(invalidUUID)
 	c.Assert(err, Not(IsNil))
-	c.Assert(err.(SemanticIDError).errCode, Equals, errInvalidSID)
+	c.Assert(err.(semanticIDError).errCode, Equals, errInvalidSID)
 
 	sid, err = FromString(fmt.Sprintf("a.b.%s", invalidUUID))
 	c.Assert(err, Not(IsNil))
-	c.Assert(err.(SemanticIDError).errCode, Equals, errInvalidUUID)
+	c.Assert(err.(semanticIDError).errCode, Equals, errInvalidUUID)
 }
 
 func (s *testSuite) TestString(c *C) {

@@ -1,5 +1,10 @@
 # SemanticID
 
+[![Build Status](https://travis-ci.org/gin-gonic/gin.svg)](https://travis-ci.org/happenslol/semanticid)
+[![codecov](https://codecov.io/gh/happenslol/semanticid/branch/master/graph/badge.svg)](https://codecov.io/gh/happenslol/semanticid)
+[![GoDoc](https://godoc.org/github.com/happenslol/semanticid?status.svg)](https://godoc.org/github.com/happenslol/semanticid)
+[![Go Report Card](https://goreportcard.com/badge/github.com/happenslol/semanticid)](https://goreportcard.com/report/github.com/happenslol/semanticid)
+
 SemanticIDs are a extended version of UUIDs, providing extra utility especially in the context of microservice infrastructures.
 
 SemanticIDs consist of 3 parts:
