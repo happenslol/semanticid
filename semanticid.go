@@ -12,8 +12,7 @@ var DefaultCollection = "collection"
 var Separator = "."
 
 const (
-	errInvalidArgs = iota
-	errUUIDError
+	errUUIDError = iota
 	errInvalidSID
 	errInvalidUUID
 )
@@ -33,11 +32,7 @@ func (sErr SemanticIDError) Error() string {
 	return sErr.message
 }
 
-func New(args ...string) (SemanticID, error) {
-	if len(args) > 2 {
-		return SemanticID{}, SemanticIDError{}
-	}
-
+func New(namespace string, collection string) (SemanticID, error) {
 	uuidPart, err := uuid.NewV4()
 	if err != nil {
 		return SemanticID{}, SemanticIDError{
@@ -46,29 +41,23 @@ func New(args ...string) (SemanticID, error) {
 		}
 	}
 
-	uuidStr := uuidPart.String()
-
-	if len(args) == 1 {
-		return SemanticID{
-			Namespace:  args[0],
-			Collection: DefaultCollection,
-			UUID:       uuidStr,
-		}, nil
-	}
-
-	if len(args) == 2 {
-		return SemanticID{
-			Namespace:  args[0],
-			Collection: args[1],
-			UUID:       uuidStr,
-		}, nil
-	}
-
 	return SemanticID{
-		Namespace:  DefaultNamespace,
-		Collection: DefaultCollection,
-		UUID:       uuidStr,
+		Namespace:  namespace,
+		Collection: collection,
+		UUID:       uuidPart.String(),
 	}, nil
+}
+
+func NewWithCollection(collection string) (SemanticID, error) {
+	return New(DefaultNamespace, collection)
+}
+
+func NewWithNamespace(namespace string) (SemanticID, error) {
+	return New(namespace, DefaultCollection)
+}
+
+func NewDefault() (SemanticID, error) {
+	return New(DefaultNamespace, DefaultCollection)
 }
 
 func FromString(s string) (SemanticID, error) {
@@ -103,8 +92,13 @@ func FromString(s string) (SemanticID, error) {
 	}, nil
 }
 
-func IsNil(sID SemanticID) bool {
+func (sID SemanticID) IsNil() bool {
 	return sID.Namespace == "" && sID.Collection == "" && sID.UUID == ""
+}
+
+func (sID SemanticID) String() string {
+	parts := []string{sID.Namespace, sID.Collection, sID.UUID}
+	return strings.Join(parts, Separator)
 }
 
 func Must(sID SemanticID, err error) SemanticID {
