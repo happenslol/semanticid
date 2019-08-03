@@ -15,6 +15,7 @@ const (
 	errUUIDError = iota
 	errInvalidSID
 	errInvalidUUID
+	errPartContainsSeparator
 )
 
 type SemanticID struct {
@@ -38,6 +39,28 @@ func New(namespace string, collection string) (SemanticID, error) {
 		return SemanticID{}, SemanticIDError{
 			errCode: errUUIDError,
 			message: err.Error(),
+		}
+	}
+
+	if strings.Contains(namespace, Separator) {
+		return SemanticID{}, SemanticIDError{
+			errCode: errPartContainsSeparator,
+			message: fmt.Sprintf(
+				"namespace `%s` can't contain the separator (%s)!",
+				namespace,
+				Separator,
+			),
+		}
+	}
+
+	if strings.Contains(collection, Separator) {
+		return SemanticID{}, SemanticIDError{
+			errCode: errPartContainsSeparator,
+			message: fmt.Sprintf(
+				"collection `%s` can't contain the separator (%s)!",
+				collection,
+				Separator,
+			),
 		}
 	}
 
@@ -77,6 +100,9 @@ func FromString(s string) (SemanticID, error) {
 	uuidPart := parts[2]
 
 	// check if the UUID part is valid
+	// TODO: Do we want a way to turn this check off? The user
+	// might want to use something other than a uuid for the id
+	// part
 	_, err := uuid.FromString(uuidPart)
 	if err != nil {
 		return SemanticID{}, SemanticIDError{
