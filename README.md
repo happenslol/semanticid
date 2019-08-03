@@ -57,9 +57,13 @@ While you can generally choose any namespace and collection you want, here are a
 Examples for good SemanticIDs:
 
 ```
-accountservice:users:7da57b46-f4f4-4824-a8e8-0c05ff88d9a5
+accountservice.users.7da57b46-f4f4-4824-a8e8-0c05ff88d9a5
+```
 
-github:repos:87961165-15f0-4fb8-8d8b-d9ce59034565
+```
+github.repos.87961165-15f0-4fb8-8d8b-d9ce59034565
+```
 
-blog:posts:59731722-54ea-4447-8e99-f4689c0c060a
+```
+blog.posts.59731722-54ea-4447-8e99-f4689c0c060a
 ```
