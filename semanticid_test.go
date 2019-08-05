@@ -3,9 +3,10 @@ package semanticid
 import (
 	"errors"
 	"fmt"
-	. "gopkg.in/check.v1"
 	"strings"
 	"testing"
+
+	. "gopkg.in/check.v1"
 )
 
 type testSuite struct{}
