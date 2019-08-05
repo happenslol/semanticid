@@ -9,11 +9,11 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-type testSuite struct{}
+type semanticidTestSuite struct{}
 
-var _ = Suite(&testSuite{})
+var _ = Suite(&semanticidTestSuite{})
 
-func (s *testSuite) SetUpTest(c *C) {
+func (s *semanticidTestSuite) SetUpTest(c *C) {
 	// Reset global defaults
 	DefaultNamespace = "namespace"
 	DefaultCollection = "collection"
@@ -23,7 +23,7 @@ func (s *testSuite) SetUpTest(c *C) {
 // Hook up gocheck into the "go test" runner.
 func TestSemanticID(t *testing.T) { TestingT(t) }
 
-func (s *testSuite) TestNew(c *C) {
+func (s *semanticidTestSuite) TestNew(c *C) {
 	sid, err := NewDefault()
 
 	c.Assert(err, IsNil)
@@ -53,7 +53,7 @@ func (s *testSuite) TestNew(c *C) {
 	c.Assert(sid.UUID, Not(HasLen), 0)
 }
 
-func (s *testSuite) TestDefault(c *C) {
+func (s *semanticidTestSuite) TestDefault(c *C) {
 	DefaultNamespace = "test-default-namespace"
 	DefaultCollection = "test-default-collection"
 
@@ -65,7 +65,7 @@ func (s *testSuite) TestDefault(c *C) {
 	c.Assert(sid.UUID, Not(HasLen), 0)
 }
 
-func (s *testSuite) TestSeparator(c *C) {
+func (s *semanticidTestSuite) TestSeparator(c *C) {
 	Separator = ":"
 	sid, err := NewDefault()
 	sidStr := sid.String()
@@ -86,7 +86,7 @@ func (s *testSuite) TestSeparator(c *C) {
 	c.Assert(strings.Contains(err.Error(), "collection"), Equals, true)
 }
 
-func (s *testSuite) TestFromString(c *C) {
+func (s *semanticidTestSuite) TestFromString(c *C) {
 	validUUID := "fd16ef44-3187-4b0d-8f18-93e7f7a5d88a"
 	invalidUUID := "0123456789"
 
@@ -105,7 +105,7 @@ func (s *testSuite) TestFromString(c *C) {
 	c.Assert(err.(semanticIDError).errCode, Equals, errInvalidUUID)
 }
 
-func (s *testSuite) TestString(c *C) {
+func (s *semanticidTestSuite) TestString(c *C) {
 	sid, err := NewDefault()
 	sidStr := sid.String()
 
@@ -113,7 +113,7 @@ func (s *testSuite) TestString(c *C) {
 	c.Assert(strings.HasPrefix(sidStr, "namespace.collection."), Equals, true)
 }
 
-func (s *testSuite) TestIsNil(c *C) {
+func (s *semanticidTestSuite) TestIsNil(c *C) {
 	sid, err := NewWithNamespace("test.test")
 	c.Assert(err, Not(IsNil))
 	c.Assert(sid.IsNil(), Equals, true)
@@ -123,7 +123,7 @@ func (s *testSuite) TestIsNil(c *C) {
 	c.Assert(parsed.IsNil(), Equals, true)
 }
 
-func (s *testSuite) TestMust(c *C) {
+func (s *semanticidTestSuite) TestMust(c *C) {
 	sid := Must(NewDefault())
 	c.Assert(sid.Namespace, Equals, "namespace")
 	c.Assert(sid.Collection, Equals, "collection")
