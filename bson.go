@@ -68,7 +68,7 @@ func (*BSONSemanticIDCodec) DecodeValue(
 
 	if vr.Type() == bsontype.Null || vr.Type() == bsontype.Undefined {
 		val.Set(reflect.ValueOf(SemanticID{}))
-		vr.ReadNull()
+		_ = vr.ReadNull()
 		return nil
 	}
 
@@ -135,7 +135,7 @@ func (*BSONSemanticIDPointerCodec) DecodeValue(
 
 	if vr.Type() == bsontype.Null || vr.Type() == bsontype.Undefined {
 		val.Set(reflect.ValueOf(&SemanticID{}))
-		vr.ReadNull()
+		_ = vr.ReadNull()
 		return nil
 	}
 
