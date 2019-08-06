@@ -9,6 +9,10 @@ var _ json.Unmarshaler = &SemanticID{}
 
 // MarshalJSON implements the json.Marshaler interface for SemanticID
 func (sid SemanticID) MarshalJSON() ([]byte, error) {
+	if sid.IsNil() {
+		return json.Marshal(nil)
+	}
+
 	str := sid.String()
 	return json.Marshal(str)
 }

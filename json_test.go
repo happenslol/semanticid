@@ -24,6 +24,13 @@ func (s *jsonTestSuite) TestMarshal(c *C) {
 	mStr := string(m)
 	expected := fmt.Sprintf("\"%s\"", sid.String())
 	c.Assert(mStr, Equals, expected)
+
+	n, err := json.Marshal(SemanticID{})
+	c.Assert(err, IsNil)
+
+	nStr := string(n)
+	expected = "null"
+	c.Assert(nStr, Equals, expected)
 }
 
 func (s *jsonTestSuite) TestUnmarshal(c *C) {
@@ -39,4 +46,16 @@ func (s *jsonTestSuite) TestUnmarshal(c *C) {
 	c.Assert(result.Namespace, Equals, sid.Namespace)
 	c.Assert(result.Collection, Equals, sid.Collection)
 	c.Assert(result.UUID, Equals, sid.UUID)
+
+	invalidUUID := "\"namespace:collection:123456789\""
+	var invalidUUIDResult SemanticID
+	err = json.Unmarshal([]byte(invalidUUID), &invalidUUIDResult)
+	c.Assert(err, Not(IsNil))
+	c.Assert(invalidUUIDResult.IsNil(), Equals, true)
+
+	invalidSID := "\"123456789\""
+	var invalidSIDResult SemanticID
+	err = json.Unmarshal([]byte(invalidSID), &invalidSIDResult)
+	c.Assert(err, Not(IsNil))
+	c.Assert(invalidSIDResult.IsNil(), Equals, true)
 }
