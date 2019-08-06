@@ -1,0 +1,10 @@
+codevoc:
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: null
+
+  range: 50..100
+  round: down
+  precision: 2
