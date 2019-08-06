@@ -70,7 +70,7 @@ func (s *bsonTestSuite) TestPointer(c *C) {
 	c.Assert(result["id"].UUID, Equals, sid.UUID)
 }
 
-func (s *bsonTestSuite) TestNull(c *C) {
+func (s *bsonTestSuite) TestNullValue(c *C) {
 	sid := SemanticID{}
 	val := bson.M{"id": sid}
 
@@ -78,6 +78,20 @@ func (s *bsonTestSuite) TestNull(c *C) {
 	c.Assert(err, IsNil)
 
 	var result map[string]SemanticID
+	err = bson.UnmarshalWithRegistry(reg, m, &result)
+
+	c.Assert(err, IsNil)
+	c.Assert(result["id"].IsNil(), Equals, true)
+}
+
+func (s *bsonTestSuite) TestNullPointer(c *C) {
+	sid := SemanticID{}
+	val := bson.M{"id": &sid}
+
+	m, err := bson.MarshalWithRegistry(reg, &val)
+	c.Assert(err, IsNil)
+
+	var result map[string]*SemanticID
 	err = bson.UnmarshalWithRegistry(reg, m, &result)
 
 	c.Assert(err, IsNil)
