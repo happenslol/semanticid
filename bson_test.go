@@ -49,7 +49,7 @@ func (s *bsonTestSuite) TestValue(c *C) {
 
 	c.Assert(result["id"].Namespace, Equals, sid.Namespace)
 	c.Assert(result["id"].Collection, Equals, sid.Collection)
-	c.Assert(result["id"].UUID, Equals, sid.UUID)
+	c.Assert(result["id"].ID, Equals, sid.ID)
 }
 
 func (s *bsonTestSuite) TestPointer(c *C) {
@@ -67,7 +67,7 @@ func (s *bsonTestSuite) TestPointer(c *C) {
 
 	c.Assert(result["id"].Namespace, Equals, sid.Namespace)
 	c.Assert(result["id"].Collection, Equals, sid.Collection)
-	c.Assert(result["id"].UUID, Equals, sid.UUID)
+	c.Assert(result["id"].ID, Equals, sid.ID)
 }
 
 func (s *bsonTestSuite) TestNullValue(c *C) {

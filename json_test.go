@@ -45,7 +45,7 @@ func (s *jsonTestSuite) TestUnmarshal(c *C) {
 
 	c.Assert(result.Namespace, Equals, sid.Namespace)
 	c.Assert(result.Collection, Equals, sid.Collection)
-	c.Assert(result.UUID, Equals, sid.UUID)
+	c.Assert(result.ID, Equals, sid.ID)
 
 	invalidUUID := "\"namespace:collection:123456789\""
 	var invalidUUIDResult SemanticID

@@ -1,11 +1,13 @@
 package semanticid
 
 import (
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"strings"
 	"testing"
 
+	"github.com/oklog/ulid"
 	. "gopkg.in/check.v1"
 )
 
@@ -29,28 +31,28 @@ func (s *semanticidTestSuite) TestNew(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(sid.Namespace, Equals, "namespace")
 	c.Assert(sid.Collection, Equals, "collection")
-	c.Assert(sid.UUID, Not(HasLen), 0)
+	c.Assert(sid.ID, Not(HasLen), 0)
 
 	sid, err = NewWithNamespace("test")
 
 	c.Assert(err, IsNil)
 	c.Assert(sid.Namespace, Equals, "test")
 	c.Assert(sid.Collection, Equals, "collection")
-	c.Assert(sid.UUID, Not(HasLen), 0)
+	c.Assert(sid.ID, Not(HasLen), 0)
 
 	sid, err = NewWithCollection("test")
 
 	c.Assert(err, IsNil)
 	c.Assert(sid.Namespace, Equals, "namespace")
 	c.Assert(sid.Collection, Equals, "test")
-	c.Assert(sid.UUID, Not(HasLen), 0)
+	c.Assert(sid.ID, Not(HasLen), 0)
 
 	sid, err = New("test-namespace", "test-collection")
 
 	c.Assert(err, IsNil)
 	c.Assert(sid.Namespace, Equals, "test-namespace")
 	c.Assert(sid.Collection, Equals, "test-collection")
-	c.Assert(sid.UUID, Not(HasLen), 0)
+	c.Assert(sid.ID, Not(HasLen), 0)
 }
 
 func (s *semanticidTestSuite) TestDefault(c *C) {
@@ -62,7 +64,7 @@ func (s *semanticidTestSuite) TestDefault(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(sid.Namespace, Equals, "test-default-namespace")
 	c.Assert(sid.Collection, Equals, "test-default-collection")
-	c.Assert(sid.UUID, Not(HasLen), 0)
+	c.Assert(sid.ID, Not(HasLen), 0)
 }
 
 func (s *semanticidTestSuite) TestSeparator(c *C) {
@@ -87,22 +89,22 @@ func (s *semanticidTestSuite) TestSeparator(c *C) {
 }
 
 func (s *semanticidTestSuite) TestFromString(c *C) {
-	validUUID := "fd16ef44-3187-4b0d-8f18-93e7f7a5d88a"
-	invalidUUID := "0123456789"
+	validID := ulid.MustNew(0, rand.Reader).String()
+	invalidID := "0123456789"
 
-	sid, err := FromString(fmt.Sprintf("a.b.%s", validUUID))
+	sid, err := FromString(fmt.Sprintf("a.b.%s", validID))
 	c.Assert(err, IsNil)
 	c.Assert(sid.Namespace, Equals, "a")
 	c.Assert(sid.Collection, Equals, "b")
-	c.Assert(sid.UUID, Equals, validUUID)
+	c.Assert(sid.ID, Equals, validID)
 
-	sid, err = FromString(invalidUUID)
+	sid, err = FromString(invalidID)
 	c.Assert(err, Not(IsNil))
 	c.Assert(err.(semanticIDError).errCode, Equals, errInvalidSID)
 
-	sid, err = FromString(fmt.Sprintf("a.b.%s", invalidUUID))
+	sid, err = FromString(fmt.Sprintf("a.b.%s", invalidID))
 	c.Assert(err, Not(IsNil))
-	c.Assert(err.(semanticIDError).errCode, Equals, errInvalidUUID)
+	c.Assert(err.(semanticIDError).errCode, Equals, errInvalidID)
 }
 
 func (s *semanticidTestSuite) TestString(c *C) {
@@ -127,7 +129,7 @@ func (s *semanticidTestSuite) TestMust(c *C) {
 	sid := Must(NewDefault())
 	c.Assert(sid.Namespace, Equals, "namespace")
 	c.Assert(sid.Collection, Equals, "collection")
-	c.Assert(sid.UUID, Not(HasLen), 0)
+	c.Assert(sid.ID, Not(HasLen), 0)
 
 	defer func() {
 		c.Assert(recover(), NotNil)
