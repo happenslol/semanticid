@@ -88,7 +88,7 @@ func (*BSONSemanticIDCodec) DecodeValue(
 
 	val.FieldByName("Namespace").SetString(parsed.Namespace)
 	val.FieldByName("Collection").SetString(parsed.Collection)
-	val.FieldByName("UUID").SetString(parsed.UUID)
+	val.FieldByName("ID").SetString(parsed.ID)
 
 	return nil
 }
@@ -161,7 +161,7 @@ func (*BSONSemanticIDPointerCodec) DecodeValue(
 
 	el.FieldByName("Namespace").SetString(parsed.Namespace)
 	el.FieldByName("Collection").SetString(parsed.Collection)
-	el.FieldByName("UUID").SetString(parsed.UUID)
+	el.FieldByName("ID").SetString(parsed.ID)
 
 	return nil
 }

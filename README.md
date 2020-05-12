@@ -5,15 +5,17 @@
 [![GoDoc](https://godoc.org/github.com/happenslol/semanticid?status.svg)](https://godoc.org/github.com/happenslol/semanticid)
 [![Go Report Card](https://goreportcard.com/badge/github.com/happenslol/semanticid)](https://goreportcard.com/report/github.com/happenslol/semanticid)
 
-SemanticIDs are an extended version of UUIDs, providing extra utility especially in the context of microservice infrastructures.
+SemanticIDs are a special type of ID, providing extra utility especially in the context of microservice infrastructures.
 
 SemanticIDs consist of 3 parts:
 
 ```
-<namespace>.<collection>.<uuid>
+<namespace>.<collection>.<id>
 ```
 
-By choosing a meaningful namespace and collection, you can glean a lot of information about an ID just by looking at it. For the UUID part, a [UUIDv4](<https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random)>) is used to guarantee globally unique IDs.
+By choosing a meaningful namespace and collection, you can glean a lot of information about an ID just by looking at it. The unique ID part uses [ULIDs](<https://github.com/ulid/spec>) by default, but can easily be changed to using [UUIDv4](<https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random)>).
+
+You can also optionally add in your own ID provider, which will allow you to customize ID generation as well as validation. This can be done globally or on a case-by-case basis by using the Builder.
 
 ## Usage
 
@@ -42,6 +44,35 @@ parsed, err := semanticid.FromString(toParse)
 if err != nil {
   fmt.Printf("something went wrong while parsing: %v", err)
 }
+```
+
+Here are some more examples for common use cases:
+
+```
+// Switch to UUIDv4
+semanticid.DefaultIDProvider = semanticid.NewUUIDProvider()
+
+// Use a custom provider just for a single ID
+type MyProvider struct {}
+
+func (p *MyProvider) Generate() (string, error) {
+  return "1234", nil
+}
+
+func (p *MyProvider) Validate(id string) {
+  return nil
+}
+
+customID, err := semanticid.Builder().
+  WithIDProvider(&MyProvider{}).
+  WithCollection("custom-id-entity").
+  Build()
+
+// Parse a semantic id without ID validation
+sid, _ := semanticid.Builder().
+  FromString("a.b.c").
+  NoValidate().
+  Build()
 ```
 
 ## Choosing namespace and collection

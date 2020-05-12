@@ -3,8 +3,6 @@ package semanticid
 import (
 	"fmt"
 	"strings"
-
-	uuid "github.com/gofrs/uuid"
 )
 
 // DefaultNamespace is the namespace that will be used if
@@ -22,19 +20,26 @@ var DefaultCollection = "collection"
 // URL-safe.
 var Separator = "."
 
+// DefaultIDProvider determines the provider that will be used to
+// generate and validate IDs. You can either set this or use the
+// builder to select the provider on an individual basis.
+var DefaultIDProvider IDProvider = NewULIDProvider()
+
+var empty = SemanticID{}
+
 const (
-	errUUIDError = iota
+	errIDProviderError = iota
 	errInvalidSID
-	errInvalidUUID
+	errInvalidID
 	errPartContainsSeparator
 )
 
 // A SemanticID is a unique identifier for an entity that consists
-// of a namespace, a collection and a UUID.
+// of a namespace, a collection and an ID.
 type SemanticID struct {
 	Namespace  string
 	Collection string
-	UUID       string
+	ID         string
 }
 
 type semanticIDError struct {
@@ -48,42 +53,8 @@ func (sErr semanticIDError) Error() string {
 
 // New creates a unique SemanticID with the given namespace,
 // collection and the global separator (`.` by default).
-func New(namespace string, collection string) (SemanticID, error) {
-	uuidPart, err := uuid.NewV4()
-	if err != nil {
-		return SemanticID{}, semanticIDError{
-			errCode: errUUIDError,
-			message: err.Error(),
-		}
-	}
-
-	if strings.Contains(namespace, Separator) {
-		return SemanticID{}, semanticIDError{
-			errCode: errPartContainsSeparator,
-			message: fmt.Sprintf(
-				"namespace `%s` can't contain the separator (%s)!",
-				namespace,
-				Separator,
-			),
-		}
-	}
-
-	if strings.Contains(collection, Separator) {
-		return SemanticID{}, semanticIDError{
-			errCode: errPartContainsSeparator,
-			message: fmt.Sprintf(
-				"collection `%s` can't contain the separator (%s)!",
-				collection,
-				Separator,
-			),
-		}
-	}
-
-	return SemanticID{
-		Namespace:  namespace,
-		Collection: collection,
-		UUID:       uuidPart.String(),
-	}, nil
+func New(namespace, collection string) (SemanticID, error) {
+	return newWithParams(namespace, collection, DefaultIDProvider)
 }
 
 // NewWithCollection creates a unique SemanticID with the given
@@ -106,12 +77,54 @@ func NewDefault() (SemanticID, error) {
 
 // FromString attempts to parse a given string into a SemanticID.
 func FromString(s string) (SemanticID, error) {
+	return fromStringWithParams(s, DefaultIDProvider, true)
+}
+
+func newWithParams(namespace, collection string, idp IDProvider) (SemanticID, error) {
+	id, err := idp.Generate()
+	if err != nil {
+		return empty, semanticIDError{
+			errCode: errIDProviderError,
+			message: err.Error(),
+		}
+	}
+
+	if strings.Contains(namespace, Separator) {
+		return empty, semanticIDError{
+			errCode: errPartContainsSeparator,
+			message: fmt.Sprintf(
+				"namespace `%s` can't contain the separator (%s)!",
+				namespace,
+				Separator,
+			),
+		}
+	}
+
+	if strings.Contains(collection, Separator) {
+		return empty, semanticIDError{
+			errCode: errPartContainsSeparator,
+			message: fmt.Sprintf(
+				"collection `%s` can't contain the separator (%s)!",
+				collection,
+				Separator,
+			),
+		}
+	}
+
+	return SemanticID{
+		Namespace:  namespace,
+		Collection: collection,
+		ID:         id,
+	}, nil
+}
+
+func fromStringWithParams(s string, idp IDProvider, validate bool) (SemanticID, error) {
 	parts := strings.SplitN(s, Separator, 3)
 
 	// SplitN(_, 3) guarantees at most len 3 for the
 	// result, so we only need to check if there aren't enough
 	if len(parts) < 3 {
-		return SemanticID{}, semanticIDError{
+		return empty, semanticIDError{
 			errCode: errInvalidSID,
 			message: fmt.Sprintf("%s is not a valid semantic id", s),
 		}
@@ -119,37 +132,35 @@ func FromString(s string) (SemanticID, error) {
 
 	namespace := parts[0]
 	collection := parts[1]
-	uuidPart := parts[2]
+	id := parts[2]
 
-	// check if the UUID part is valid
-	// TODO: Do we want a way to turn this check off? The user
-	// might want to use something other than a uuid for the id
-	// part
-	_, err := uuid.FromString(uuidPart)
-	if err != nil {
-		return SemanticID{}, semanticIDError{
-			errCode: errInvalidUUID,
-			message: fmt.Sprintf("The UUID section for %s is invalid", s),
+	if validate {
+		// check if the ID part is valid
+		err := idp.Validate(id)
+		if err != nil {
+			return empty, semanticIDError{
+				errCode: errInvalidID,
+				message: fmt.Sprintf("The UUID section for %s is invalid", s),
+			}
 		}
 	}
 
 	return SemanticID{
 		Namespace:  namespace,
 		Collection: collection,
-		UUID:       uuidPart,
+		ID:         id,
 	}, nil
 }
 
 // IsNil checks whether or not the SemanticID has any of its part
 // set to a non-null string.
 func (sID SemanticID) IsNil() bool {
-	return sID.Namespace == "" && sID.Collection == "" && sID.UUID == ""
+	return sID == empty
 }
 
 // String outputs a string representation of the SemanticID
 func (sID SemanticID) String() string {
-	parts := []string{sID.Namespace, sID.Collection, sID.UUID}
-	return strings.Join(parts, Separator)
+	return strings.Join([]string{sID.Namespace, sID.Collection, sID.ID}, Separator)
 }
 
 // Must is a convenience function that converts errors into panics on functions
