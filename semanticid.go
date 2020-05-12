@@ -2,6 +2,7 @@ package semanticid
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -93,7 +94,7 @@ func newWithParams(namespace, collection string, idp IDProvider) (SemanticID, er
 		return empty, semanticIDError{
 			errCode: errPartContainsSeparator,
 			message: fmt.Sprintf(
-				"namespace `%s` can't contain the separator (%s)!",
+				"Namespace `%s` can't contain the separator (%s)",
 				namespace,
 				Separator,
 			),
@@ -104,7 +105,7 @@ func newWithParams(namespace, collection string, idp IDProvider) (SemanticID, er
 		return empty, semanticIDError{
 			errCode: errPartContainsSeparator,
 			message: fmt.Sprintf(
-				"collection `%s` can't contain the separator (%s)!",
+				"Collection `%s` can't contain the separator (%s)",
 				collection,
 				Separator,
 			),
@@ -171,4 +172,56 @@ func Must(sID SemanticID, err error) SemanticID {
 	}
 
 	return sID
+}
+
+// CollectionForModel returns the collection defined in the `sid` tag
+// on the `ID` field of the passed struct.
+func CollectionForModel(model interface{}) (string, error) {
+	return CollectionForModelField(model, "ID")
+}
+
+// CollectionForModelField returns the collection defined in the `sid` tag
+// on the given field.
+func CollectionForModelField(model interface{}, field string) (string, error) {
+	var t reflect.Type
+	kind := reflect.ValueOf(model).Kind()
+	if kind == reflect.Struct {
+		t = reflect.TypeOf(model)
+	} else if kind == reflect.Ptr {
+		t = reflect.Indirect(reflect.ValueOf(model)).Type()
+	}
+
+	f, ok := t.FieldByName(field)
+	if !ok {
+		return "", fmt.Errorf("Field `%s` not found on model", field)
+	}
+
+	tag := f.Tag.Get("sid")
+	if tag == "" {
+		return "", fmt.Errorf("Field `%s` did not include an sid tag", field)
+	}
+
+	if strings.Contains(tag, Separator) {
+		return "", semanticIDError{
+			errCode: errPartContainsSeparator,
+			message: fmt.Sprintf(
+				"Collection `%s` can't contain the separator (`%s`)",
+				tag,
+				Separator,
+			),
+		}
+	}
+
+	return tag, nil
+}
+
+// NewForModel creates a unique SemanticID using the collection defined
+// in the `sid` tag in the given model.
+func NewForModel(model interface{}) (SemanticID, error) {
+	collection, err := CollectionForModel(model)
+	if err != nil {
+		return empty, err
+	}
+
+	return NewWithCollection(collection)
 }
