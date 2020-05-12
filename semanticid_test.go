@@ -93,12 +93,10 @@ func (s *semanticidTestSuite) TestSeparator(c *C) {
 	_, err = NewWithNamespace("test.test")
 	c.Assert(err, Not(IsNil))
 	c.Assert(err.(semanticIDError).errCode, Equals, errPartContainsSeparator)
-	c.Assert(strings.Contains(err.Error(), "namespace"), Equals, true)
 
 	_, err = NewWithCollection("test.test")
 	c.Assert(err, Not(IsNil))
 	c.Assert(err.(semanticIDError).errCode, Equals, errPartContainsSeparator)
-	c.Assert(strings.Contains(err.Error(), "collection"), Equals, true)
 }
 
 func (s *semanticidTestSuite) TestFromString(c *C) {
@@ -151,4 +149,34 @@ func (s *semanticidTestSuite) TestMust(c *C) {
 	Must(func() (SemanticID, error) {
 		return SemanticID{}, errors.New("")
 	}())
+}
+
+type TestModel struct {
+	ID         SemanticID `sid:"testmodels"`
+	CustomID   string     `sid:"custom"`
+	InvalidTag string     `sid:"test.models"`
+}
+
+func (s *semanticidTestSuite) TestModel(c *C) {
+	collection, err := CollectionForModel(TestModel{})
+	c.Assert(err, IsNil)
+	c.Assert(collection, Equals, "testmodels")
+
+	collection, err = CollectionForModel(&TestModel{})
+	c.Assert(err, IsNil)
+	c.Assert(collection, Equals, "testmodels")
+
+	collection, err = CollectionForModelField(TestModel{}, "CustomID")
+	c.Assert(err, IsNil)
+	c.Assert(collection, Equals, "custom")
+
+	_, err = CollectionForModelField(TestModel{}, "InvalidTag")
+	c.Assert(err, NotNil)
+
+	_, err = CollectionForModelField(TestModel{}, "NonExistant")
+	c.Assert(err, NotNil)
+
+	sid, err := NewForModel(TestModel{})
+	c.Assert(err, IsNil)
+	c.Assert(sid.Collection, Equals, "testmodels")
 }
