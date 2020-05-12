@@ -11,6 +11,17 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+var _ IDProvider = &TestProvider{}
+var testProvider = &TestProvider{}
+
+func (tp *TestProvider) Generate() (string, error) {
+	return "1234", nil
+}
+
+func (tp *TestProvider) Validate(id string) error {
+	return nil
+}
+
 type semanticidTestSuite struct{}
 
 var _ = Suite(&semanticidTestSuite{})
@@ -59,13 +70,14 @@ func (s *semanticidTestSuite) TestNew(c *C) {
 func (s *semanticidTestSuite) TestDefault(c *C) {
 	DefaultNamespace = "test-default-namespace"
 	DefaultCollection = "test-default-collection"
+	DefaultIDProvider = testProvider
 
 	sid, err := NewDefault()
 
 	c.Assert(err, IsNil)
 	c.Assert(sid.Namespace, Equals, "test-default-namespace")
 	c.Assert(sid.Collection, Equals, "test-default-collection")
-	c.Assert(sid.ID, Not(HasLen), 0)
+	c.Assert(sid.ID, Equals, "1234")
 }
 
 func (s *semanticidTestSuite) TestSeparator(c *C) {

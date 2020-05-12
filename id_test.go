@@ -17,7 +17,7 @@ func (s *idProviderTestSuite) SetUpTest(c *C) {}
 
 func TestIDProvider(t *testing.T) { TestingT(t) }
 
-func (s *semanticidTestSuite) TestULID(c *C) {
+func (s *idProviderTestSuite) TestULID(c *C) {
 	validULID := ulid.MustNew(0, rand.Reader).String()
 	invalidULID := "1234"
 
@@ -36,7 +36,7 @@ func (s *semanticidTestSuite) TestULID(c *C) {
 	c.Assert(invalid, NotNil)
 }
 
-func (s *semanticidTestSuite) TestUUID(c *C) {
+func (s *idProviderTestSuite) TestUUID(c *C) {
 	validUUID := uuid.Must(uuid.NewV4()).String()
 	invalidUUID := "1234"
 

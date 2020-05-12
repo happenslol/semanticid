@@ -23,7 +23,7 @@ var Separator = "."
 // DefaultIDProvider determines the provider that will be used to
 // generate and validate IDs. You can either set this or use the
 // builder to select the provider on an individual basis.
-var DefaultIDProvider = NewULIDProvider()
+var DefaultIDProvider IDProvider = NewULIDProvider()
 
 var empty = SemanticID{}
 
