@@ -19,6 +19,7 @@ func (s *semanticidTestSuite) SetUpTest(c *C) {
 	// Reset global defaults
 	DefaultNamespace = "namespace"
 	DefaultCollection = "collection"
+	DefaultIDProvider = NewULIDProvider()
 	Separator = "."
 }
 
