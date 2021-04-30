@@ -156,7 +156,7 @@ func fromStringWithParams(s string, idp IDProvider, validate bool) (SemanticID, 
 // IsNil checks whether or not the SemanticID has any of its part
 // set to a non-null string.
 func (sID SemanticID) IsNil() bool {
-	return sID == empty
+	return sID.Namespace == "" && sID.Collection == "" && sID.ID == ""
 }
 
 // String outputs a string representation of the SemanticID
