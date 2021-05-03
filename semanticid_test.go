@@ -1,182 +1,118 @@
-package semanticid
+package semanticid_test
 
 import (
-	"crypto/rand"
-	"errors"
-	"fmt"
-	"strings"
-	"testing"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
-	"github.com/oklog/ulid"
-	. "gopkg.in/check.v1"
+	"github.com/happenslol/semanticid"
 )
 
-var _ IDProvider = &TestProvider{}
-var testProvider = &TestProvider{}
-
-func (tp *TestProvider) Generate() (string, error) {
-	return "1234", nil
-}
-
-func (tp *TestProvider) Validate(id string) error {
-	return nil
-}
-
-type semanticidTestSuite struct{}
-
-var _ = Suite(&semanticidTestSuite{})
-
-func (s *semanticidTestSuite) SetUpTest(c *C) {
-	// Reset global defaults
-	DefaultNamespace = "namespace"
-	DefaultCollection = "collection"
-	DefaultIDProvider = NewULIDProvider()
-	Separator = "."
-}
-
-// Hook up gocheck into the "go test" runner.
-func TestSemanticID(t *testing.T) { TestingT(t) }
-
-func (s *semanticidTestSuite) TestNew(c *C) {
-	sid, err := NewDefault()
-
-	c.Assert(err, IsNil)
-	c.Assert(sid.Namespace, Equals, "namespace")
-	c.Assert(sid.Collection, Equals, "collection")
-	c.Assert(sid.ID, Not(HasLen), 0)
-
-	sid, err = NewWithNamespace("test")
-
-	c.Assert(err, IsNil)
-	c.Assert(sid.Namespace, Equals, "test")
-	c.Assert(sid.Collection, Equals, "collection")
-	c.Assert(sid.ID, Not(HasLen), 0)
-
-	sid, err = NewWithCollection("test")
-
-	c.Assert(err, IsNil)
-	c.Assert(sid.Namespace, Equals, "namespace")
-	c.Assert(sid.Collection, Equals, "test")
-	c.Assert(sid.ID, Not(HasLen), 0)
-
-	sid, err = New("test-namespace", "test-collection")
-
-	c.Assert(err, IsNil)
-	c.Assert(sid.Namespace, Equals, "test-namespace")
-	c.Assert(sid.Collection, Equals, "test-collection")
-	c.Assert(sid.ID, Not(HasLen), 0)
-}
-
-func (s *semanticidTestSuite) TestDefault(c *C) {
-	DefaultNamespace = "test-default-namespace"
-	DefaultCollection = "test-default-collection"
-	DefaultIDProvider = testProvider
-
-	sid, err := NewDefault()
-
-	c.Assert(err, IsNil)
-	c.Assert(sid.Namespace, Equals, "test-default-namespace")
-	c.Assert(sid.Collection, Equals, "test-default-collection")
-	c.Assert(sid.ID, Equals, "1234")
-}
-
-func (s *semanticidTestSuite) TestSeparator(c *C) {
-	Separator = ":"
-	sid, err := NewDefault()
-	sidStr := sid.String()
-
-	c.Assert(err, IsNil)
-	c.Assert(strings.HasPrefix(sidStr, "namespace:collection:"), Equals, true)
-
-	Separator = "."
-
-	_, err = NewWithNamespace("test.test")
-	c.Assert(err, Not(IsNil))
-	c.Assert(err.(semanticIDError).errCode, Equals, errPartContainsSeparator)
-
-	_, err = NewWithCollection("test.test")
-	c.Assert(err, Not(IsNil))
-	c.Assert(err.(semanticIDError).errCode, Equals, errPartContainsSeparator)
-}
-
-func (s *semanticidTestSuite) TestFromString(c *C) {
-	validID := ulid.MustNew(0, rand.Reader).String()
-	invalidID := "0123456789"
-
-	sid, err := FromString(fmt.Sprintf("a.b.%s", validID))
-	c.Assert(err, IsNil)
-	c.Assert(sid.Namespace, Equals, "a")
-	c.Assert(sid.Collection, Equals, "b")
-	c.Assert(sid.ID, Equals, validID)
-
-	sid, err = FromString(invalidID)
-	c.Assert(err, Not(IsNil))
-	c.Assert(err.(semanticIDError).errCode, Equals, errInvalidSID)
-
-	sid, err = FromString(fmt.Sprintf("a.b.%s", invalidID))
-	c.Assert(err, Not(IsNil))
-	c.Assert(err.(semanticIDError).errCode, Equals, errInvalidID)
-}
-
-func (s *semanticidTestSuite) TestString(c *C) {
-	sid, err := NewDefault()
-	sidStr := sid.String()
-
-	c.Assert(err, IsNil)
-	c.Assert(strings.HasPrefix(sidStr, "namespace.collection."), Equals, true)
-}
-
-func (s *semanticidTestSuite) TestIsNil(c *C) {
-	sid, err := NewWithNamespace("test.test")
-	c.Assert(err, Not(IsNil))
-	c.Assert(sid.IsNil(), Equals, true)
-
-	parsed, err := FromString("0123456789")
-	c.Assert(err, Not(IsNil))
-	c.Assert(parsed.IsNil(), Equals, true)
-}
-
-func (s *semanticidTestSuite) TestMust(c *C) {
-	sid := Must(NewDefault())
-	c.Assert(sid.Namespace, Equals, "namespace")
-	c.Assert(sid.Collection, Equals, "collection")
-	c.Assert(sid.ID, Not(HasLen), 0)
-
-	defer func() {
-		c.Assert(recover(), NotNil)
-	}()
-
-	Must(func() (SemanticID, error) {
-		return SemanticID{}, errors.New("")
-	}())
-}
-
 type TestModel struct {
-	ID         SemanticID `sid:"testmodels"`
-	CustomID   string     `sid:"custom"`
-	InvalidTag string     `sid:"test.models"`
+	ID         semanticid.SemanticID `sid:"testmodels"`
+	CustomID   string                `sid:"custom"`
+	InvalidTag string                `sid:"test.models"`
 }
 
-func (s *semanticidTestSuite) TestModel(c *C) {
-	collection, err := CollectionForModel(TestModel{})
-	c.Assert(err, IsNil)
-	c.Assert(collection, Equals, "testmodels")
+var _ = Describe("semanticid", func() {
+	Describe("Creating semanticids", func() {
+		Context("with default values", func() {
+			It("should succeed", func() {
+				sid, err := semanticid.NewDefault()
+				Expect(err).To(BeNil())
 
-	collection, err = CollectionForModel(&TestModel{})
-	c.Assert(err, IsNil)
-	c.Assert(collection, Equals, "testmodels")
+				Expect(sid.Namespace).To(Equal("namespace"))
+				Expect(sid.Collection).To(Equal("collection"))
+				Expect(sid.ID).ToNot(BeEmpty())
+			})
+		})
 
-	collection, err = CollectionForModelField(TestModel{}, "CustomID")
-	c.Assert(err, IsNil)
-	c.Assert(collection, Equals, "custom")
+		Context("with a custom namespace", func() {
+			It("should succeed", func() {
+				sid, err := semanticid.NewWithNamespace("testname")
+				Expect(err).To(BeNil())
 
-	_, err = CollectionForModelField(TestModel{}, "InvalidTag")
-	c.Assert(err, NotNil)
+				Expect(sid.Namespace).To(Equal("testname"))
+				Expect(sid.Collection).To(Equal("collection"))
+				Expect(sid.ID).ToNot(BeEmpty())
+			})
+		})
 
-	_, err = CollectionForModelField(TestModel{}, "NonExistant")
-	c.Assert(err, NotNil)
+		Context("with a custom collection", func() {
+			It("should succeed", func() {
+				sid, err := semanticid.NewWithCollection("testcol")
+				Expect(err).To(BeNil())
 
-	sid, err := NewForModel(TestModel{})
-	c.Assert(err, IsNil)
-	c.Assert(sid.Collection, Equals, "testmodels")
-}
+				Expect(sid.Namespace).To(Equal("namespace"))
+				Expect(sid.Collection).To(Equal("testcol"))
+				Expect(sid.ID).ToNot(BeEmpty())
+			})
+		})
+
+		Context("with a custom namespace and collection", func() {
+			It("should succeed", func() {
+				sid, err := semanticid.New("testname", "testcol")
+				Expect(err).To(BeNil())
+
+				Expect(sid.Namespace).To(Equal("testname"))
+				Expect(sid.Collection).To(Equal("testcol"))
+				Expect(sid.ID).ToNot(BeEmpty())
+			})
+		})
+
+		Context("with invalid namespaces or collections", func() {
+			It("should reject the separator in namespace and collection", func() {
+				sid, err := semanticid.NewWithNamespace("test.test")
+				Expect(err).NotTo(BeNil())
+				Expect(sid.IsNil()).To(BeTrue())
+
+				sid, err = semanticid.NewWithCollection("test.test")
+				Expect(err).NotTo(BeNil())
+				Expect(sid.IsNil()).To(BeTrue())
+			})
+		})
+
+		Context("from strings", func() {
+			It("should parse valid semantic ids", func() {
+			})
+
+			It("should reject invalid semantic ids", func() {
+			})
+		})
+	})
+
+	Describe("Using the collection struct tag", func() {
+		Context("with the default model field", func() {
+			It("should return the correct collection for a model value", func() {
+				collection, err := semanticid.CollectionForModel(TestModel{})
+				Expect(err).To(BeNil())
+				Expect(collection).To(Equal("testmodels"))
+			})
+
+			It("should return the correct collection for a model pointer", func() {
+				collection, err := semanticid.CollectionForModel(&TestModel{})
+				Expect(err).To(BeNil())
+				Expect(collection).To(Equal("testmodels"))
+			})
+		})
+
+		Context("with a custom model field", func() {
+			It("should return the correct collection", func() {
+				collection, err := semanticid.CollectionForModelField(TestModel{}, "CustomID")
+				Expect(err).To(BeNil())
+				Expect(collection).To(Equal("custom"))
+			})
+
+			It("should return an error for non-existant fields", func() {
+				_, err := semanticid.CollectionForModelField(TestModel{}, "NonExistant")
+				Expect(err).NotTo(BeNil())
+			})
+		})
+
+		Context("with an invalid tag", func() {
+			It("should return an error", func() {
+				_, err := semanticid.CollectionForModelField(TestModel{}, "InvalidTag")
+				Expect(err).NotTo(BeNil())
+			})
+		})
+	})
+})

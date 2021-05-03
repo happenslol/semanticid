@@ -1,99 +1,113 @@
-package semanticid
+package semanticid_test
 
 import (
 	"reflect"
-	"testing"
 
+	"github.com/happenslol/semanticid"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
-	. "gopkg.in/check.v1"
 )
 
-type bsonTestSuite struct{}
-
-var _ = Suite(&bsonTestSuite{})
-var reg *bsoncodec.Registry
-
-func TestBSON(t *testing.T) { TestingT(t) }
-
-func (s *bsonTestSuite) SetUpSuite(c *C) {
-	rb := bsoncodec.NewRegistryBuilder()
-	bsoncodec.DefaultValueDecoders{}.RegisterDefaultDecoders(rb)
-	bsoncodec.DefaultValueEncoders{}.RegisterDefaultEncoders(rb)
-
-	rb.RegisterCodec(
-		reflect.TypeOf(&SemanticID{}),
-		&BSONSemanticIDPointerCodec{},
+var _ = Describe("bson", func() {
+	var (
+		reg            *bsoncodec.Registry
+		sidValue       semanticid.SemanticID
+		sidPointer     *semanticid.SemanticID
+		zeroSID        semanticid.SemanticID
+		zeroSIDPointer *semanticid.SemanticID
 	)
 
-	rb.RegisterCodec(
-		reflect.TypeOf(SemanticID{}),
-		&BSONSemanticIDCodec{},
-	)
+	BeforeEach(func() {
+		rb := bsoncodec.NewRegistryBuilder()
+		bsoncodec.DefaultValueDecoders{}.RegisterDefaultDecoders(rb)
+		bsoncodec.DefaultValueEncoders{}.RegisterDefaultEncoders(rb)
 
-	reg = rb.Build()
-}
+		rb.RegisterCodec(
+			reflect.TypeOf(&semanticid.SemanticID{}),
+			&semanticid.BSONSemanticIDPointerCodec{},
+		)
 
-func (s *bsonTestSuite) TestValue(c *C) {
-	sid, err := NewDefault()
-	c.Assert(err, IsNil)
+		rb.RegisterCodec(
+			reflect.TypeOf(semanticid.SemanticID{}),
+			&semanticid.BSONSemanticIDCodec{},
+		)
 
-	val := bson.M{"id": sid}
+		reg = rb.Build()
 
-	m, err := bson.MarshalWithRegistry(reg, val)
-	c.Assert(err, IsNil)
+		var err error
+		sidValue, err = semanticid.NewDefault()
+		Expect(err).To(BeNil())
 
-	var result map[string]SemanticID
-	err = bson.UnmarshalWithRegistry(reg, m, &result)
-	c.Assert(err, IsNil)
+		sidPointerValue, err := semanticid.NewDefault()
+		Expect(err).To(BeNil())
 
-	c.Assert(result["id"].Namespace, Equals, sid.Namespace)
-	c.Assert(result["id"].Collection, Equals, sid.Collection)
-	c.Assert(result["id"].ID, Equals, sid.ID)
-}
+		sidPointer = &sidPointerValue
 
-func (s *bsonTestSuite) TestPointer(c *C) {
-	sid, err := NewDefault()
-	c.Assert(err, IsNil)
+		zeroSID = semanticid.SemanticID{}
+		zeroSIDPointer = &semanticid.SemanticID{}
+	})
 
-	val := bson.M{"id": &sid}
+	Describe("Marshalling and unmarshalling semanticids as bson", func() {
+		Context("with a semanticid value", func() {
+			It("should work correctly", func() {
+				val := bson.M{"id": sidValue}
+				m, err := bson.MarshalWithRegistry(reg, val)
+				Expect(err).To(BeNil())
 
-	m, err := bson.MarshalWithRegistry(reg, val)
-	c.Assert(err, IsNil)
+				var result map[string]semanticid.SemanticID
+				err = bson.UnmarshalWithRegistry(reg, m, &result)
+				Expect(err).To(BeNil())
 
-	var result map[string]*SemanticID
-	err = bson.UnmarshalWithRegistry(reg, m, &result)
-	c.Assert(err, IsNil)
+				Expect(result["id"].Namespace).To(Equal(sidValue.Namespace))
+				Expect(result["id"].Collection).To(Equal(sidValue.Collection))
+				Expect(result["id"].ID).To(Equal(sidValue.ID))
+			})
+		})
 
-	c.Assert(result["id"].Namespace, Equals, sid.Namespace)
-	c.Assert(result["id"].Collection, Equals, sid.Collection)
-	c.Assert(result["id"].ID, Equals, sid.ID)
-}
+		Context("with a semanticid pointer", func() {
+			It("should work correctly", func() {
+				val := bson.M{"id": sidPointer}
+				m, err := bson.MarshalWithRegistry(reg, val)
+				Expect(err).To(BeNil())
 
-func (s *bsonTestSuite) TestNullValue(c *C) {
-	sid := SemanticID{}
-	val := bson.M{"id": sid}
+				var result map[string]*semanticid.SemanticID
+				err = bson.UnmarshalWithRegistry(reg, m, &result)
+				Expect(err).To(BeNil())
 
-	m, err := bson.MarshalWithRegistry(reg, &val)
-	c.Assert(err, IsNil)
+				Expect(result["id"].Namespace).To(Equal(sidPointer.Namespace))
+				Expect(result["id"].Collection).To(Equal(sidPointer.Collection))
+				Expect(result["id"].ID).To(Equal(sidPointer.ID))
+			})
+		})
 
-	var result map[string]SemanticID
-	err = bson.UnmarshalWithRegistry(reg, m, &result)
+		Context("with a zero semanticid value", func() {
+			It("should work correctly", func() {
+				val := bson.M{"id": zeroSID}
+				m, err := bson.MarshalWithRegistry(reg, val)
+				Expect(err).To(BeNil())
 
-	c.Assert(err, IsNil)
-	c.Assert(result["id"].IsNil(), Equals, true)
-}
+				var result map[string]semanticid.SemanticID
+				err = bson.UnmarshalWithRegistry(reg, m, &result)
+				Expect(err).To(BeNil())
 
-func (s *bsonTestSuite) TestNullPointer(c *C) {
-	sid := SemanticID{}
-	val := bson.M{"id": &sid}
+				Expect(result["id"].IsNil()).To(BeTrue())
+			})
+		})
 
-	m, err := bson.MarshalWithRegistry(reg, &val)
-	c.Assert(err, IsNil)
+		Context("with a zero semanticid pointer", func() {
+			It("should work correctly", func() {
+				val := bson.M{"id": zeroSIDPointer}
+				m, err := bson.MarshalWithRegistry(reg, val)
+				Expect(err).To(BeNil())
 
-	var result map[string]*SemanticID
-	err = bson.UnmarshalWithRegistry(reg, m, &result)
+				var result map[string]*semanticid.SemanticID
+				err = bson.UnmarshalWithRegistry(reg, m, &result)
+				Expect(err).To(BeNil())
 
-	c.Assert(err, IsNil)
-	c.Assert(result["id"].IsNil(), Equals, true)
-}
+				Expect(result["id"].IsNil()).To(BeTrue())
+			})
+		})
+	})
+})

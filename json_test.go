@@ -1,61 +1,75 @@
-package semanticid
+package semanticid_test
 
 import (
 	"encoding/json"
 	"fmt"
-	"testing"
 
-	. "gopkg.in/check.v1"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"github.com/happenslol/semanticid"
 )
 
-type jsonTestSuite struct{}
+var _ = Describe("json", func() {
+	Describe("Marshalling semanticids to json", func() {
+		Context("with a default semanticid", func() {
+			It("should work correctly", func() {
+				sid, err := semanticid.NewDefault()
+				Expect(err).To(BeNil())
 
-var _ = Suite(&jsonTestSuite{})
+				m, err := json.Marshal(sid)
+				Expect(err).To(BeNil())
 
-func TestJSON(t *testing.T) { TestingT(t) }
+				mStr := string(m)
+				expected := fmt.Sprintf("\"%s\"", sid.String())
 
-func (s *jsonTestSuite) TestMarshal(c *C) {
-	sid, err := NewDefault()
-	c.Assert(err, IsNil)
+				Expect(mStr).To(Equal(expected))
+			})
+		})
 
-	m, err := json.Marshal(sid)
-	c.Assert(err, IsNil)
+		Context("with a zero value semanticid", func() {
+			It("should work correctly", func() {
+				zeroVal := semanticid.SemanticID{}
 
-	mStr := string(m)
-	expected := fmt.Sprintf("\"%s\"", sid.String())
-	c.Assert(mStr, Equals, expected)
+				m, err := json.Marshal(zeroVal)
+				Expect(err).To(BeNil())
 
-	n, err := json.Marshal(SemanticID{})
-	c.Assert(err, IsNil)
+				mStr := string(m)
+				Expect(mStr).To(Equal("null"))
+			})
+		})
+	})
 
-	nStr := string(n)
-	expected = "null"
-	c.Assert(nStr, Equals, expected)
-}
+	Describe("Unmarshalling semanticids from json", func() {
+		Context("with a valid semanticid", func() {
+			sid, err := semanticid.NewDefault()
+			Expect(err).To(BeNil())
 
-func (s *jsonTestSuite) TestUnmarshal(c *C) {
-	sid, err := NewDefault()
-	c.Assert(err, IsNil)
+			jsonStr := fmt.Sprintf("\"%s\"", sid.String())
+			var result semanticid.SemanticID
+			err = json.Unmarshal([]byte(jsonStr), &result)
 
-	jsonStr := fmt.Sprintf("\"%s\"", sid.String())
+			Expect(err).To(BeNil())
 
-	var result SemanticID
-	err = json.Unmarshal([]byte(jsonStr), &result)
-	c.Assert(err, IsNil)
+			Expect(result.Namespace).To(Equal(sid.Namespace))
+			Expect(result.Collection).To(Equal(sid.Collection))
+			Expect(result.ID).To(Equal(sid.ID))
+		})
 
-	c.Assert(result.Namespace, Equals, sid.Namespace)
-	c.Assert(result.Collection, Equals, sid.Collection)
-	c.Assert(result.ID, Equals, sid.ID)
+		Context("with a semanticid that has an invalid ID", func() {
+			jsonStr := "\"namespace:collection:1234\""
+			var result semanticid.SemanticID
+			err := json.Unmarshal([]byte(jsonStr), &result)
 
-	invalidUUID := "\"namespace:collection:123456789\""
-	var invalidUUIDResult SemanticID
-	err = json.Unmarshal([]byte(invalidUUID), &invalidUUIDResult)
-	c.Assert(err, Not(IsNil))
-	c.Assert(invalidUUIDResult.IsNil(), Equals, true)
+			Expect(err).NotTo(BeNil())
+		})
 
-	invalidSID := "\"123456789\""
-	var invalidSIDResult SemanticID
-	err = json.Unmarshal([]byte(invalidSID), &invalidSIDResult)
-	c.Assert(err, Not(IsNil))
-	c.Assert(invalidSIDResult.IsNil(), Equals, true)
-}
+		Context("with a semanticid that has an invalid format", func() {
+			jsonStr := "\"123456789\""
+			var result semanticid.SemanticID
+			err := json.Unmarshal([]byte(jsonStr), &result)
+
+			Expect(err).NotTo(BeNil())
+		})
+	})
+})

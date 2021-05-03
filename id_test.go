@@ -1,56 +1,82 @@
-package semanticid
+package semanticid_test
 
 import (
 	"crypto/rand"
-	"testing"
 
-	"github.com/gofrs/uuid"
 	"github.com/oklog/ulid"
-	. "gopkg.in/check.v1"
+	"github.com/gofrs/uuid"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"github.com/happenslol/semanticid"
 )
 
-type idProviderTestSuite struct{}
+var _ = Describe("id", func() {
+	Describe("Using the ULID provider", func() {
+		var ulidProvider semanticid.IDProvider
 
-var _ = Suite(&idProviderTestSuite{})
+		BeforeEach(func() {
+			ulidProvider = semanticid.NewULIDProvider()
+		})
 
-func (s *idProviderTestSuite) SetUpTest(c *C) {}
+		Context("to generate IDs", func() {
+			It("should generate valid IDs", func() {
+				id, err := ulidProvider.Generate()
+				Expect(err).To(BeNil())
+				Expect(id).NotTo(BeEmpty())
 
-func TestIDProvider(t *testing.T) { TestingT(t) }
+				_, err = ulid.Parse(id)
+				Expect(err).To(BeNil())
+			})
+		})
 
-func (s *idProviderTestSuite) TestULID(c *C) {
-	validULID := ulid.MustNew(0, rand.Reader).String()
-	invalidULID := "1234"
+		Context("to validate IDs", func() {
+			It("should accept valid IDs", func() {
+				validULID, err := ulid.New(0, rand.Reader)
+				Expect(err).To(BeNil())
 
-	up := NewULIDProvider()
+				err = ulidProvider.Validate(validULID.String())
+				Expect(err).To(BeNil())
+			})
 
-	gen, err := up.Generate()
-	c.Assert(err, IsNil)
+			It("should reject invalid IDs", func() {
+				err := ulidProvider.Validate("1234")
+				Expect(err).NotTo(BeNil())
+			})
+		})
+	})
 
-	_, err = ulid.Parse(gen)
-	c.Assert(err, IsNil)
+	Describe("Using the UUID provider", func() {
+		var uuidProvider semanticid.IDProvider
 
-	valid := up.Validate(validULID)
-	c.Assert(valid, IsNil)
+		BeforeEach(func() {
+			uuidProvider = semanticid.NewUUIDProvider()
+		})
 
-	invalid := up.Validate(invalidULID)
-	c.Assert(invalid, NotNil)
-}
+		Context("to generate IDs", func() {
+			It("should generate valid IDs", func() {
+				id, err := uuidProvider.Generate()
+				Expect(err).To(BeNil())
+				Expect(id).NotTo(BeEmpty())
 
-func (s *idProviderTestSuite) TestUUID(c *C) {
-	validUUID := uuid.Must(uuid.NewV4()).String()
-	invalidUUID := "1234"
+				_, err = uuid.FromString(id)
+				Expect(err).To(BeNil())
+			})
+		})
 
-	up := NewUUIDProvider()
+		Context("to validate IDs", func() {
+			It("should accept valid IDs", func() {
+				validUUID, err := uuid.NewV4()
+				Expect(err).To(BeNil())
 
-	gen, err := up.Generate()
-	c.Assert(err, IsNil)
+				err = uuidProvider.Validate(validUUID.String())
+				Expect(err).To(BeNil())
+			})
 
-	_, err = uuid.FromString(gen)
-	c.Assert(err, IsNil)
-
-	valid := up.Validate(validUUID)
-	c.Assert(valid, IsNil)
-
-	invalid := up.Validate(invalidUUID)
-	c.Assert(invalid, NotNil)
-}
+			It("should reject invalid IDs", func() {
+				err := uuidProvider.Validate("1234")
+				Expect(err).NotTo(BeNil())
+			})
+		})
+	})
+})

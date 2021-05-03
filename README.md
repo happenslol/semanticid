@@ -48,7 +48,7 @@ if err != nil {
 
 Here are some more examples for common use cases:
 
-```
+```go
 // Switch to UUIDv4
 semanticid.DefaultIDProvider = semanticid.NewUUIDProvider()
 
