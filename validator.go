@@ -21,7 +21,7 @@ func validateSIDPrefix(sid SemanticID, namespace, collection string) bool {
 }
 
 func SemanticIDValidation(fl validator.FieldLevel) bool {
-	value := fl.Field().Interface()
+	raw := fl.Field().Interface()
 
 	param := fl.Param()
 	namespace := "*"
@@ -44,16 +44,16 @@ func SemanticIDValidation(fl validator.FieldLevel) bool {
 		panic(fmt.Sprintf("Bad sid validation argument: %s", param))
 	}
 
-	switch value.(type) {
+	switch value := raw.(type) {
 	case string:
-		sid, err := FromString(value.(string))
+		sid, err := FromString(value)
 		if err != nil {
 			return false
 		}
 
 		return validateSIDPrefix(sid, namespace, collection)
 	case []string:
-		for _, s := range value.([]string) {
+		for _, s := range value {
 			sid, err := FromString(s)
 			if err != nil {
 				return false
@@ -72,25 +72,22 @@ func SemanticIDValidation(fl validator.FieldLevel) bool {
 
 func SemanticIDTypeFunc(field reflect.Value) interface{} {
 	raw := field.Interface()
-	switch raw.(type) {
+	switch value := raw.(type) {
 	case SemanticID:
-		id := raw.(SemanticID)
-		if id.IsNil() {
+		if value.IsNil() {
 			return ""
 		}
 
-		return id.String()
+		return value.String()
 	case *SemanticID:
-		id := raw.(*SemanticID)
-		if id.IsNil() {
+		if value.IsNil() {
 			return ""
 		}
 
-		return id.String()
+		return value.String()
 	case []SemanticID:
-		ids := raw.([]SemanticID)
-		idStrs := make([]string, len(ids))
-		for i, id := range ids {
+		idStrs := make([]string, len(value))
+		for i, id := range value {
 			if id.IsNil() {
 				idStrs[i] = ""
 			} else {
@@ -100,9 +97,8 @@ func SemanticIDTypeFunc(field reflect.Value) interface{} {
 
 		return idStrs
 	case []*SemanticID:
-		ids := raw.([]*SemanticID)
-		idStrs := make([]string, len(ids))
-		for i, id := range ids {
+		idStrs := make([]string, len(value))
+		for i, id := range value {
 			if id.IsNil() {
 				idStrs[i] = ""
 			} else {
@@ -116,7 +112,7 @@ func SemanticIDTypeFunc(field reflect.Value) interface{} {
 	return ""
 }
 
-func RegisterValidation(v *validator.Validate) {
+func RegisterValidation(v *validator.Validate) error {
 	v.RegisterCustomTypeFunc(
 		SemanticIDTypeFunc,
 		SemanticID{},
@@ -125,5 +121,5 @@ func RegisterValidation(v *validator.Validate) {
 		[]*SemanticID{},
 	)
 
-	v.RegisterValidation("sid", SemanticIDValidation)
+	return v.RegisterValidation("sid", SemanticIDValidation)
 }

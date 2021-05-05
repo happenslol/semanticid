@@ -1,6 +1,8 @@
 package semanticid_test
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -37,7 +39,8 @@ var _ = Describe("validator", func() {
 
 	BeforeEach(func() {
 		validate = validator.New()
-		semanticid.RegisterValidation(validate)
+		err := semanticid.RegisterValidation(validate)
+		Expect(err).To(BeNil())
 
 		pointerID := semanticid.Must(semanticid.New("any", "testcol"))
 
@@ -113,12 +116,20 @@ var _ = Describe("validator", func() {
 
 		Context("with incorrect validate tag arguments", func() {
 			It("should panic when no arguments are passed", func() {
-				fn := func() { validate.Struct(&NoArgValidation{}) }
+				fn := func() {
+					if err := validate.Struct(&NoArgValidation{}); err != nil {
+						fmt.Printf("%v\n", err)
+					}
+				}
 				Expect(fn).To(Panic())
 			})
 
 			It("should panic when an argument with more than 1 separator is passed", func() {
-				fn := func() { validate.Struct(&InvalidArgValidation{}) }
+				fn := func() {
+					if err := validate.Struct(&InvalidArgValidation{}); err != nil {
+						fmt.Printf("%v\n", err)
+					}
+				}
 				Expect(fn).To(Panic())
 			})
 		})
