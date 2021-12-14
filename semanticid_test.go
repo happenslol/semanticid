@@ -73,10 +73,27 @@ var _ = Describe("semanticid", func() {
 
 		Context("from strings", func() {
 			It("should parse valid semantic ids", func() {
+				sid, err := semanticid.New("testname", "testcol")
+				Expect(err).To(BeNil())
+
+				str := sid.String()
+				parsed, err := semanticid.FromString(str)
+				Expect(err).To(BeNil())
+				Expect(parsed.IsNil()).To(BeFalse())
 			})
 
 			It("should reject invalid semantic ids", func() {
+				parsed, err := semanticid.FromString("some.id")
+				Expect(err).ToNot(BeNil())
+				Expect(parsed.IsNil()).To(BeTrue())
 			})
+		})
+	})
+
+	Describe("Converting a semanticid to a string", func() {
+		It("should return an empty string for a nil id", func() {
+			result := semanticid.SemanticID{}.String()
+			Expect(result).To(Equal(""))
 		})
 	})
 

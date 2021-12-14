@@ -161,6 +161,10 @@ func (sID SemanticID) IsNil() bool {
 
 // String outputs a string representation of the SemanticID
 func (sID SemanticID) String() string {
+	if sID.IsNil() {
+		return ""
+	}
+
 	return strings.Join([]string{sID.Namespace, sID.Collection, sID.ID}, Separator)
 }
 
