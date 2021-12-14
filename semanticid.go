@@ -33,6 +33,15 @@ const (
 	errInvalidSID
 	errInvalidID
 	errPartContainsSeparator
+	errEmpty
+)
+
+var (
+	ErrEmpty                 = &SemanticIDError{errEmpty, ""}
+	ErrIDProvider            = &SemanticIDError{errIDProviderError, ""}
+	ErrInvalid               = &SemanticIDError{errInvalidSID, ""}
+	ErrInvalidIDPart         = &SemanticIDError{errInvalidID, ""}
+	ErrPartContainsSeparator = &SemanticIDError{errPartContainsSeparator, ""}
 )
 
 // A SemanticID is a unique identifier for an entity that consists
@@ -43,13 +52,22 @@ type SemanticID struct {
 	ID         string
 }
 
-type semanticIDError struct {
+type SemanticIDError struct {
 	errCode int
 	message string
 }
 
-func (sErr semanticIDError) Error() string {
-	return sErr.message
+func (err *SemanticIDError) Error() string {
+	return err.message
+}
+
+func (err *SemanticIDError) Is(target error) bool {
+	t, ok := target.(*SemanticIDError)
+	if !ok {
+		return false
+	}
+
+	return err.errCode == t.errCode
 }
 
 // New creates a unique SemanticID with the given namespace,
@@ -84,14 +102,14 @@ func FromString(s string) (SemanticID, error) {
 func newWithParams(namespace, collection string, idp IDProvider) (SemanticID, error) {
 	id, err := idp.Generate()
 	if err != nil {
-		return empty, semanticIDError{
+		return empty, &SemanticIDError{
 			errCode: errIDProviderError,
 			message: err.Error(),
 		}
 	}
 
 	if strings.Contains(namespace, Separator) {
-		return empty, semanticIDError{
+		return empty, &SemanticIDError{
 			errCode: errPartContainsSeparator,
 			message: fmt.Sprintf(
 				"Namespace `%s` can't contain the separator (%s)",
@@ -102,7 +120,7 @@ func newWithParams(namespace, collection string, idp IDProvider) (SemanticID, er
 	}
 
 	if strings.Contains(collection, Separator) {
-		return empty, semanticIDError{
+		return empty, &SemanticIDError{
 			errCode: errPartContainsSeparator,
 			message: fmt.Sprintf(
 				"Collection `%s` can't contain the separator (%s)",
@@ -120,12 +138,16 @@ func newWithParams(namespace, collection string, idp IDProvider) (SemanticID, er
 }
 
 func fromStringWithParams(s string, idp IDProvider, validate bool) (SemanticID, error) {
+	if s == "" {
+		return SemanticID{}, &SemanticIDError{errEmpty, "The given string was empty"}
+	}
+
 	parts := strings.SplitN(s, Separator, 3)
 
 	// SplitN(_, 3) guarantees at most len 3 for the
 	// result, so we only need to check if there aren't enough
 	if len(parts) < 3 {
-		return empty, semanticIDError{
+		return empty, &SemanticIDError{
 			errCode: errInvalidSID,
 			message: fmt.Sprintf("%s is not a valid semantic id", s),
 		}
@@ -139,7 +161,7 @@ func fromStringWithParams(s string, idp IDProvider, validate bool) (SemanticID, 
 		// check if the ID part is valid
 		err := idp.Validate(id)
 		if err != nil {
-			return empty, semanticIDError{
+			return empty, &SemanticIDError{
 				errCode: errInvalidID,
 				message: fmt.Sprintf("The UUID section for %s is invalid", s),
 			}
@@ -206,7 +228,7 @@ func CollectionForModelField(model interface{}, field string) (string, error) {
 	}
 
 	if strings.Contains(tag, Separator) {
-		return "", semanticIDError{
+		return "", &SemanticIDError{
 			errCode: errPartContainsSeparator,
 			message: fmt.Sprintf(
 				"Collection `%s` can't contain the separator (`%s`)",

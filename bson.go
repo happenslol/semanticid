@@ -99,6 +99,10 @@ func (*BSONSemanticIDPointerCodec) EncodeValue(
 	vw bsonrw.ValueWriter,
 	val reflect.Value,
 ) error {
+	if val.IsNil() {
+		return vw.WriteNull()
+	}
+
 	if val.Type() != pointerType {
 		return bsoncodec.ValueEncoderError{
 			Name:     "SemanticIDEncodeValue",
@@ -110,7 +114,7 @@ func (*BSONSemanticIDPointerCodec) EncodeValue(
 	isNilMethod := val.MethodByName("IsNil")
 	isNilResult := isNilMethod.Call([]reflect.Value{})[0].Bool()
 	if isNilResult {
-		return vw.WriteNull()
+		return vw.WriteString("")
 	}
 
 	strMethod := val.MethodByName("String")
@@ -134,7 +138,8 @@ func (*BSONSemanticIDPointerCodec) DecodeValue(
 	}
 
 	if vr.Type() == bsontype.Null || vr.Type() == bsontype.Undefined {
-		val.Set(reflect.ValueOf(&SemanticID{}))
+		nilValue := reflect.Zero(reflect.TypeOf(&SemanticID{}))
+		val.Set(nilValue)
 		_ = vr.ReadNull()
 		return nil
 	}

@@ -1,6 +1,7 @@
 package semanticid_test
 
 import (
+	"errors"
 	"reflect"
 
 	"github.com/happenslol/semanticid"
@@ -97,8 +98,22 @@ var _ = Describe("bson", func() {
 		})
 
 		Context("with a zero semanticid pointer", func() {
-			It("should work correctly", func() {
+			It("should return an empty err when unmarshalling", func() {
 				val := bson.M{"id": zeroSIDPointer}
+				m, err := bson.MarshalWithRegistry(reg, val)
+				Expect(err).To(BeNil())
+
+				var result map[string]*semanticid.SemanticID
+				err = bson.UnmarshalWithRegistry(reg, m, &result)
+				Expect(errors.Is(err, semanticid.ErrEmpty)).To(BeTrue())
+
+				Expect(result["id"]).To(BeNil())
+			})
+		})
+
+		Context("with a nil pointer", func() {
+			It("should always stay nil", func() {
+				val := bson.M{"id": (*semanticid.SemanticID)(nil)}
 				m, err := bson.MarshalWithRegistry(reg, val)
 				Expect(err).To(BeNil())
 
@@ -106,7 +121,7 @@ var _ = Describe("bson", func() {
 				err = bson.UnmarshalWithRegistry(reg, m, &result)
 				Expect(err).To(BeNil())
 
-				Expect(result["id"].IsNil()).To(BeTrue())
+				Expect(result["id"]).To(BeNil())
 			})
 		})
 	})
