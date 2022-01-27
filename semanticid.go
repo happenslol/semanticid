@@ -99,6 +99,24 @@ func FromString(s string) (SemanticID, error) {
 	return fromStringWithParams(s, DefaultIDProvider, true)
 }
 
+// FromStrings attempts to parse a given list of strings into a
+// list of SemanticIDs. An error will be returned for the first
+// conversion that errors, which means that a list that returns
+// an error is not guaranteed to only contain that one error.
+func FromStrings(s []string) ([]SemanticID, error) {
+	result := make([]SemanticID, len(s))
+	for i, id := range s {
+		sid, err := FromString(id)
+		if err != nil {
+			return nil, err
+		}
+
+		result[i] = sid
+	}
+
+	return result, nil
+}
+
 func newWithParams(namespace, collection string, idp IDProvider) (SemanticID, error) {
 	id, err := idp.Generate()
 	if err != nil {
@@ -188,6 +206,17 @@ func (sID SemanticID) String() string {
 	}
 
 	return strings.Join([]string{sID.Namespace, sID.Collection, sID.ID}, Separator)
+}
+
+// Is checks the identity of a SemanticID, given by its Namespace and Collection.
+// It expects a dot-separated Namespace and Collection combination, such that
+// `semanticid.New("auth", "users").Is("auth.users") == true`.
+func (sID SemanticID) Is(identity string) bool {
+	if sID.IsNil() {
+		return false
+	}
+
+	return fmt.Sprintf("%s.%s", sID.Namespace, sID.Collection) == identity
 }
 
 // Must is a convenience function that converts errors into panics on functions

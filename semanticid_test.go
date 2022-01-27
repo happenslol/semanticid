@@ -88,12 +88,37 @@ var _ = Describe("semanticid", func() {
 				Expect(parsed.IsNil()).To(BeTrue())
 			})
 		})
+
+		Context("From a list of strings", func() {
+			It("shoud parse a list of valid semantic ids", func() {
+				strs := make([]string, 10)
+				for i := 0; i < 10; i++ {
+					sid, err := semanticid.New("testname", "testcol")
+					Expect(err).To(BeNil())
+					strs[i] = sid.String()
+				}
+
+				parsed, err := semanticid.FromStrings(strs)
+				Expect(err).To(BeNil())
+				Expect(len(parsed)).To(Equal(10))
+			})
+		})
 	})
 
 	Describe("Converting a semanticid to a string", func() {
 		It("should return an empty string for a nil id", func() {
 			result := semanticid.SemanticID{}.String()
 			Expect(result).To(Equal(""))
+		})
+	})
+
+	Describe("Checking the identity of a semanticid", func() {
+		It("should return true for an equal identity", func() {
+			sid, err := semanticid.New("testname", "testcol")
+			Expect(err).To(BeNil())
+
+			isEqual := sid.Is("testname.testcol")
+			Expect(isEqual).To(BeTrue())
 		})
 	})
 
