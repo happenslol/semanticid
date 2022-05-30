@@ -117,6 +117,17 @@ func FromStrings(s []string) ([]SemanticID, error) {
 	return result, nil
 }
 
+// ToStrings converts a list of semanticids to their
+// string representation.
+func ToStrings(s []SemanticID) ([]string, error) {
+	result := make([]string, len(s))
+	for i, id := range s {
+		result[i] = id.String()
+	}
+
+	return result, nil
+}
+
 func newWithParams(namespace, collection string, idp IDProvider) (SemanticID, error) {
 	id, err := idp.Generate()
 	if err != nil {
